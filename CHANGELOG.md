@@ -4,6 +4,9 @@ Todas as alterações relevantes deste projeto são documentadas neste arquivo s
 
 ## [Unreleased]
 
+### Added
+- Portal de documentação **Astro Starlight** em `docs-site/` com busca local Pagefind, diagramas Mermaid (`astro-mermaid`), script single-source-of-truth (`sync-docs.mjs`), geração automática de `llms.txt` e workflow GitHub Actions (`.github/workflows/docs.yml`) para PR check e deploy no GitHub Pages.
+
 ### Planned
 - Motor Multi-Agente em Go (`google.golang.org/genai`, `errgroup`, Tool Calling e streaming SSE).
 - RAG híbrido (`pgvector` + `tsvector` + RRF) sobre `docs/regulatory/`.

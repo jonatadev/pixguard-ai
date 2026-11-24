@@ -50,6 +50,7 @@ flowchart TD
 │   └── Dockerfile            # Multi-stage node:22-alpine -> nginx:1.27-alpine
 ├── deploy/                   # Docker Compose + Prometheus + Grafana + Loki + Langfuse v3
 ├── docs/regulatory/          # Corpus regulatório simulado (Bacen MED, Bloqueio Cautelar, LGPD)
+├── docs-site/                # Portal de documentação Astro Starlight + Mermaid + llms.txt
 ├── prompts/                  # Prompts versionados em YAML com contrato de saída
 ├── CHANGELOG.md              # Histórico de releases SemVer
 └── CONTRIBUTING.md           # Fluxo Spec-First, Conventional Commits e checklist de PR
@@ -60,6 +61,7 @@ flowchart TD
 ## Engenharia AI-Native (`specs/`, `AGENTS.md` & `.agents/skills/`)
 
 Este repositório adota **Spec-Driven Development** e **Eval-First** como cidadãos de primeira classe:
+- **Portal Web (Astro Starlight):** [https://jonatadev.github.io/pixguard-ai/](https://jonatadev.github.io/pixguard-ai/) · índice AI-Native `/llms.txt` · build local em [`docs-site/`](./docs-site/README.md) (`cd docs-site; npm.cmd install; npm.cmd run dev`)
 - **Especificações (`specs/`):** [Índice Mestre](./specs/README.md) · [Arquitetura](./specs/001-system-architecture.md) · [Orquestração Multi-Agente](./specs/002-multi-agent-orchestration.md) · [Guardrails LGPD & Segurança](./specs/003-lgpd-security-guardrails.md) · [LLMOps, Eval & Observabilidade](./specs/004-llmops-eval-and-observability.md) · [ADR-0001](./specs/adr/0001-tech-stack-and-ai-sdlc.md)
 - **Contexto Hierárquico para Agentes:** [`AGENTS.md`](./AGENTS.md), [`backend/AGENTS.md`](./backend/AGENTS.md) e [`frontend/AGENTS.md`](./frontend/AGENTS.md)
 - **Workspace Skills:** [`pixguard-spec-driven-dev`](./.agents/skills/pixguard-spec-driven-dev/SKILL.md), [`pixguard-lgpd-guardrail`](./.agents/skills/pixguard-lgpd-guardrail/SKILL.md), [`pixguard-prompt-eval-ops`](./.agents/skills/pixguard-prompt-eval-ops/SKILL.md), [`pixguard-observability-ops`](./.agents/skills/pixguard-observability-ops/SKILL.md) e [`pixguard-release-conventional`](./.agents/skills/pixguard-release-conventional/SKILL.md)
