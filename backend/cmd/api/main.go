@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pixguard-ai/pixguard-ai/internal/config"
-	"github.com/pixguard-ai/pixguard-ai/internal/httpapi"
-	"github.com/pixguard-ai/pixguard-ai/internal/store"
-	"github.com/pixguard-ai/pixguard-ai/internal/telemetry"
+	"github.com/jonatadev/pixguard-ai/internal/config"
+	"github.com/jonatadev/pixguard-ai/internal/httpapi"
+	"github.com/jonatadev/pixguard-ai/internal/store"
+	"github.com/jonatadev/pixguard-ai/internal/telemetry"
 )
 
 func main() {

@@ -1,5 +1,10 @@
 # Padrão de ownership para revisão em Pull Requests
-* @pixguard-ai/maintainers
-/prompts/ @pixguard-ai/ai-governance
-/docs/regulatory/ @pixguard-ai/compliance
-/deploy/ @pixguard-ai/platform
+* @jonatadev
+/AGENTS.md @jonatadev
+/backend/AGENTS.md @jonatadev
+/frontend/AGENTS.md @jonatadev
+/.agents/ @jonatadev
+/specs/ @jonatadev
+/prompts/ @jonatadev
+/docs/regulatory/ @jonatadev
+/deploy/ @jonatadev

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pixguard-ai/pixguard-ai/internal/guardrail"
+	"github.com/jonatadev/pixguard-ai/internal/guardrail"
 )
 
 type evalCase struct {

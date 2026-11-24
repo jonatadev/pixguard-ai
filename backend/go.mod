@@ -1,4 +1,4 @@
-module github.com/pixguard-ai/pixguard-ai
+module github.com/jonatadev/pixguard-ai
 
 go 1.24.0
 

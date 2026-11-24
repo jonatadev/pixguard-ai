@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pixguard-ai/pixguard-ai/internal/domain"
+	"github.com/jonatadev/pixguard-ai/internal/domain"
 )
 
 // CaseRepository abstracts Pix dispute persistence for memory and PostgreSQL backends.

@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pixguard-ai/pixguard-ai/internal/config"
+	"github.com/jonatadev/pixguard-ai/internal/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

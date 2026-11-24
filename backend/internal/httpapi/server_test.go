@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pixguard-ai/pixguard-ai/internal/config"
-	"github.com/pixguard-ai/pixguard-ai/internal/domain"
-	"github.com/pixguard-ai/pixguard-ai/internal/store"
-	"github.com/pixguard-ai/pixguard-ai/internal/telemetry"
+	"github.com/jonatadev/pixguard-ai/internal/config"
+	"github.com/jonatadev/pixguard-ai/internal/domain"
+	"github.com/jonatadev/pixguard-ai/internal/store"
+	"github.com/jonatadev/pixguard-ai/internal/telemetry"
 )
 
 func newTestServer() *Server {

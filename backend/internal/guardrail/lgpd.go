@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pixguard-ai/pixguard-ai/internal/domain"
+	"github.com/jonatadev/pixguard-ai/internal/domain"
 )
 
 var (
