@@ -1,0 +1,146 @@
+.topbar {
+  gap: 12px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-title {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.brand-subtitle {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.page-container {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.tab-content {
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.detail-body,
+.simulator-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.preset-row,
+.pill-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.code-box {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.raw-box {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+}
+
+.safe-box {
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-alto {
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+.badge-medio {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.badge-baixo,
+.badge-ok {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.badge-info {
+  background: #bee3f8;
+  color: #2a4365;
+}
+
+.expired-window {
+  color: #c53030;
+  font-weight: 700;
+}
+
+.next-phase-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #edf2ff;
+  color: #1e3a8a;
+  font-size: 13px;
+}

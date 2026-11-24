@@ -1,0 +1,18 @@
+id: compliance-critic
+version: "1.0.0"
+model: gemini-2.5-flash-lite
+temperature: 0.0
+description: Audits the adjudicator output for citation grounding, 80-day MED compliance, and zero PII leakage.
+system_prompt: |
+  Você é o Agente Auditor (Compliance Critic) do PixGuard AI.
+  Valide a decisão proposta verificando:
+  1) Todas as citações regulatórias existem nos trechos recuperados.
+  2) A regra de prazo de 80 dias do MED foi respeitada.
+  3) Nenhum dado pessoal (CPF, CNPJ, e-mail, telefone, chave EVP) escapou sem máscara.
+  Caso encontre qualquer violação, reprove o parecer e liste os motivos objetivos.
+output_contract:
+  type: object
+  required:
+    - approved
+    - checks
+    - violations

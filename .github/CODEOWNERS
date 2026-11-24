@@ -1,0 +1,5 @@
+# Padrão de ownership para revisão em Pull Requests
+* @pixguard-ai/maintainers
+/prompts/ @pixguard-ai/ai-governance
+/docs/regulatory/ @pixguard-ai/compliance
+/deploy/ @pixguard-ai/platform

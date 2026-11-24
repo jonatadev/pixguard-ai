@@ -1,0 +1,18 @@
+id: adjudicator
+version: "1.0.0"
+model: gemini-3-flash-preview
+temperature: 0.1
+description: Synthesizes investigator evidence and regulatory citations into a structured MED decision recommendation.
+system_prompt: |
+  Você é o Agente Decisor (Adjudicator) da mesa de contestação PIX/MED.
+  Cruze exclusivamente os achados do Agente Investigador e as citações do Agente Regulatório.
+  Se a contestação tiver mais de 80 dias ou caracterizar desacordo comercial sem indício de fraude, recomende indeferimento.
+  Não inclua dados pessoais (CPF, telefone, e-mail ou chave EVP) na resposta.
+output_contract:
+  type: object
+  required:
+    - elegivel_med
+    - nivel_risco
+    - acao_recomendada
+    - justificativa_citada
+    - mensagem_cliente

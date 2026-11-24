@@ -1,0 +1,258 @@
+<mat-toolbar color="primary" class="topbar">
+  <mat-icon class="brand-icon">shield</mat-icon>
+  <div class="brand-text">
+    <span class="brand-title">PixGuard AI</span>
+    <span class="brand-subtitle">PIX / MED &amp; Antifraude Copilot</span>
+  </div>
+
+  <span class="spacer"></span>
+
+  @if (health(); as h) {
+    <mat-chip-set>
+      <mat-chip class="status-ok">
+        <mat-icon matChipAvatar>check_circle</mat-icon>
+        API {{ h.status | uppercase }} ({{ h.env }})
+      </mat-chip>
+    </mat-chip-set>
+  } @else {
+    <mat-chip-set>
+      <mat-chip class="status-err">
+        <mat-icon matChipAvatar>error</mat-icon>
+        {{ apiError() || 'Verificando API...' }}
+      </mat-chip>
+    </mat-chip-set>
+  }
+</mat-toolbar>
+
+<main class="page-container">
+  <mat-tab-group animationDuration="200ms">
+    <mat-tab label="Mesa de Contestação PIX (MED)">
+      <div class="tab-content">
+        <section class="kpi-grid">
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-icon mat-card-avatar color="primary">inbox</mat-icon>
+              <mat-card-title>{{ cases().length }}</mat-card-title>
+              <mat-card-subtitle>Casos na Fila</mat-card-subtitle>
+            </mat-card-header>
+          </mat-card>
+
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-icon mat-card-avatar color="warn">warning</mat-icon>
+              <mat-card-title>{{ highRiskCount() }}</mat-card-title>
+              <mat-card-subtitle>Risco Alto</mat-card-subtitle>
+            </mat-card-header>
+          </mat-card>
+
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>security</mat-icon>
+              <mat-card-title>{{ securityAlertCount() }}</mat-card-title>
+              <mat-card-subtitle>Alertas Prazo / Injection</mat-card-subtitle>
+            </mat-card-header>
+          </mat-card>
+
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>hub</mat-icon>
+              <mat-card-title>{{ readyIntegrationsCount() }}/3</mat-card-title>
+              <mat-card-subtitle>Integrações Ativas (Gemini/Langfuse/DB)</mat-card-subtitle>
+            </mat-card-header>
+          </mat-card>
+        </section>
+
+        <section class="filter-bar">
+          <span class="filter-label">Filtrar por risco:</span>
+          <mat-chip-listbox
+            [value]="selectedRisk()"
+            (change)="selectRiskFilter($event.value || 'TODOS')"
+          >
+            @for (risk of riskFilters; track risk) {
+              <mat-chip-option [value]="risk">{{ risk }}</mat-chip-option>
+            }
+          </mat-chip-listbox>
+        </section>
+
+        <section class="workspace-grid">
+          <mat-card appearance="outlined" class="table-card">
+            <mat-card-header>
+              <mat-card-title>Fila de Contestações MED</mat-card-title>
+              <mat-card-subtitle>Clique em Inspecionar para validar LGPD e janela legal de 80 dias</mat-card-subtitle>
+            </mat-card-header>
+            @if (loadingCases()) {
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            }
+            <mat-card-content>
+              <table mat-table [dataSource]="cases()" class="full-width">
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>Protocolo</th>
+                  <td mat-cell *matCellDef="let row"><strong>{{ row.id }}</strong></td>
+                </ng-container>
+
+                <ng-container matColumnDef="customerAlias">
+                  <th mat-header-cell *matHeaderCellDef>Cliente</th>
+                  <td mat-cell *matCellDef="let row">{{ row.customerAlias }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="amountBrl">
+                  <th mat-header-cell *matHeaderCellDef>Valor</th>
+                  <td mat-cell *matCellDef="let row">{{ row.amountBrl | currency: 'BRL' : 'symbol' : '1.2-2' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="daysSinceTx">
+                  <th mat-header-cell *matHeaderCellDef>Dias</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span [class.expired-window]="row.daysSinceTx > 80">
+                      {{ row.daysSinceTx }}d
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="recipientBank">
+                  <th mat-header-cell *matHeaderCellDef>PSP Recebedor</th>
+                  <td mat-cell *matCellDef="let row">{{ row.recipientBank }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="riskLevel">
+                  <th mat-header-cell *matHeaderCellDef>Risco</th>
+                  <td mat-cell *matCellDef="let row">
+                    <span class="badge" [class]="'badge-' + row.riskLevel.toLowerCase()">
+                      {{ row.riskLevel }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let row">{{ row.status }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Ação</th>
+                  <td mat-cell *matCellDef="let row">
+                    <button mat-stroked-button color="primary" (click)="inspectCase(row.id)">
+                      Inspecionar
+                    </button>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card appearance="outlined" class="detail-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar color="primary">policy</mat-icon>
+              <mat-card-title>
+                {{ selectedDetail()?.case?.id || 'Selecione um caso' }}
+              </mat-card-title>
+              <mat-card-subtitle>Inspeção LGPD &amp; Segurança</mat-card-subtitle>
+            </mat-card-header>
+
+            @if (loadingDetail()) {
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            }
+
+            @if (selectedDetail(); as d) {
+              <mat-card-content class="detail-body">
+                <div class="pill-row">
+                  <span class="badge" [class]="d.medWindowValid ? 'badge-ok' : 'badge-alto'">
+                    {{ d.medWindowValid ? 'Dentro do prazo MED (<= 80d)' : 'Fora do prazo MED (> 80d)' }}
+                  </span>
+                  <span class="badge badge-info">
+                    {{ d.guardrailReport.piiRedactionsCount }} PII redigidos
+                  </span>
+                  @if (d.guardrailReport.promptInjectionDetected) {
+                    <span class="badge badge-alto">Prompt Injection Bloqueado</span>
+                  }
+                </div>
+
+                <h4>Narrativa Original (Mesa Interna)</h4>
+                <p class="code-box raw-box">{{ d.case.rawDescription }}</p>
+
+                <h4>Narrativa Sanitizada (Enviada ao LLM)</h4>
+                <p class="code-box safe-box">{{ d.sanitizedDescription }}</p>
+
+                <mat-divider></mat-divider>
+
+                <div class="next-phase-banner">
+                  <mat-icon>auto_awesome</mat-icon>
+                  <span>
+                    <strong>Próxima fase:</strong> Execução Multi-Agente (Investigador + RAG Bacen + Decisor + Auditor) com trace OTLP no Langfuse.
+                  </span>
+                </div>
+              </mat-card-content>
+            }
+          </mat-card>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Simulador Guardrail LGPD & Prompt Injection">
+      <div class="tab-content">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">privacy_tip</mat-icon>
+            <mat-card-title>Simulador de Guardrail Determinístico (Go)</mat-card-title>
+            <mat-card-subtitle>
+              Testa mascaramento LGPD (CPF, CNPJ, E-mail, Telefone, EVP) e detecção de Prompt Injection antes do LLM.
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content class="simulator-body">
+            <div class="preset-row">
+              <button mat-stroked-button (click)="applyPreset('lgpd')">Preset: CPF + Chave PIX</button>
+              <button mat-stroked-button color="warn" (click)="applyPreset('injection')">Preset: Prompt Injection em PIX</button>
+              <button mat-stroked-button (click)="applyPreset('clean')">Preset: Caso Limpo</button>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Texto da contestação ou descrição da transferência PIX</mat-label>
+              <textarea
+                matInput
+                rows="4"
+                [ngModel]="guardrailInput()"
+                (ngModelChange)="guardrailInput.set($event)"
+              ></textarea>
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" (click)="runGuardrailPreview()">
+              <mat-icon>verified_user</mat-icon>
+              Executar Guardrail na API Go
+            </button>
+
+            @if (loadingGuardrail()) {
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            }
+
+            @if (guardrailResult(); as res) {
+              <div class="result-panel">
+                <div class="pill-row">
+                  <span class="badge badge-info">PII Mascarados: {{ res.report.piiRedactionsCount }}</span>
+                  <span class="badge" [class]="res.report.safeForLlm ? 'badge-ok' : 'badge-alto'">
+                    {{ res.report.safeForLlm ? 'Seguro para LLM' : 'Bloqueado: Prompt Injection' }}
+                  </span>
+                </div>
+
+                <h4>Texto Sanitizado</h4>
+                <p class="code-box safe-box">{{ res.sanitizedText }}</p>
+
+                @if (res.report.findings.length > 0) {
+                  <h4>Achados Detectados</h4>
+                  <ul class="findings-list">
+                    @for (f of res.report.findings; track f.rule) {
+                      <li><strong>{{ f.category }}</strong> ({{ f.rule }}): {{ f.count }}x</li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</main>

@@ -1,0 +1,16 @@
+id: regulatory-rag
+version: "1.0.0"
+model: gemini-2.5-flash-lite
+temperature: 0.0
+description: Retrieves and grounds Bacen MED, Bloqueio Cautelar, and LGPD/PLD-FT rules via hybrid RAG.
+system_prompt: |
+  Você é o Agente Regulatório do PixGuard AI.
+  Responda exclusivamente com base nos trechos normativos recuperados (Bacen MED, Bloqueio Cautelar e Política Interna).
+  Cite sempre o documento e o artigo/seção correspondente.
+  Se não houver base normativa nos trechos recuperados, declare explicitamente que não há regra aplicável encontrada.
+output_contract:
+  type: object
+  required:
+    - eligible_by_rule
+    - cited_articles
+    - regulatory_notes

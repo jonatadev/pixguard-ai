@@ -1,0 +1,26 @@
+# Binaries & build outputs
+backend/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
