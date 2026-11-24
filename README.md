@@ -28,6 +28,9 @@ flowchart TD
 ## Estrutura do Repositório
 
 ```text
+├── .agents/skills/           # Workspace Skills do Antigravity (Spec-First, LGPD, Eval, Obs, Release)
+├── AGENTS.md                 # Diretrizes globais de engenharia AI-Native (+ backend/ e frontend/)
+├── specs/                    # Especificações técnicas e ADRs (Spec-Driven Development)
 ├── backend/                  # API REST Go 1.24, Guardrail LGPD, Telemetria e Eval CLI
 │   ├── cmd/api/              # Servidor HTTP + Graceful Shutdown
 │   ├── cmd/eval/             # Runner offline de AI Eval Gate (Guardrail & Regressão)
@@ -47,8 +50,20 @@ flowchart TD
 │   └── Dockerfile            # Multi-stage node:22-alpine -> nginx:1.27-alpine
 ├── deploy/                   # Docker Compose + Prometheus + Grafana + Loki + Langfuse v3
 ├── docs/regulatory/          # Corpus regulatório simulado (Bacen MED, Bloqueio Cautelar, LGPD)
-└── prompts/                  # Prompts versionados em YAML com contrato de saída
+├── prompts/                  # Prompts versionados em YAML com contrato de saída
+├── CHANGELOG.md              # Histórico de releases SemVer
+└── CONTRIBUTING.md           # Fluxo Spec-First, Conventional Commits e checklist de PR
 ```
+
+---
+
+## Engenharia AI-Native (`specs/`, `AGENTS.md` & `.agents/skills/`)
+
+Este repositório adota **Spec-Driven Development** e **Eval-First** como cidadãos de primeira classe:
+- **Especificações (`specs/`):** [Índice Mestre](./specs/README.md) · [Arquitetura](./specs/001-system-architecture.md) · [Orquestração Multi-Agente](./specs/002-multi-agent-orchestration.md) · [Guardrails LGPD & Segurança](./specs/003-lgpd-security-guardrails.md) · [LLMOps, Eval & Observabilidade](./specs/004-llmops-eval-and-observability.md) · [ADR-0001](./specs/adr/0001-tech-stack-and-ai-sdlc.md)
+- **Contexto Hierárquico para Agentes:** [`AGENTS.md`](./AGENTS.md), [`backend/AGENTS.md`](./backend/AGENTS.md) e [`frontend/AGENTS.md`](./frontend/AGENTS.md)
+- **Workspace Skills:** [`pixguard-spec-driven-dev`](./.agents/skills/pixguard-spec-driven-dev/SKILL.md), [`pixguard-lgpd-guardrail`](./.agents/skills/pixguard-lgpd-guardrail/SKILL.md), [`pixguard-prompt-eval-ops`](./.agents/skills/pixguard-prompt-eval-ops/SKILL.md), [`pixguard-observability-ops`](./.agents/skills/pixguard-observability-ops/SKILL.md) e [`pixguard-release-conventional`](./.agents/skills/pixguard-release-conventional/SKILL.md)
+- **Governança & Versionamento:** [CONTRIBUTING.md](./CONTRIBUTING.md) · [CHANGELOG.md](./CHANGELOG.md) · Repositório alvo: `https://github.com/jonatadev/pixguard-ai`
 
 ---
 
