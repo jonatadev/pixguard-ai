@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="PixGuard AI Logo">
+  <rect width="64" height="64" rx="14" fill="#0f172a"/>
+  <path d="M32 10L50 17.5V31.5C50 43.2 42.3 51.9 32 55C21.7 51.9 14 43.2 14 31.5V17.5L32 10Z" fill="#064e3b" stroke="#10b981" stroke-width="2.5"/>
+  <path d="M24 32.5L29.5 38L41 26.5" stroke="#34d399" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

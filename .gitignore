@@ -19,6 +19,16 @@ frontend/dist/
 frontend/.angular/
 frontend/coverage/
 
+# Docs Site (Astro Starlight)
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/
+docs-site/public/llms.txt
+docs-site/src/content/docs/specs/
+docs-site/src/content/docs/regulatory/
+docs-site/src/content/docs/ai-native/
+docs-site/src/content/docs/governance/
+
 # IDE & OS
 .idea/
 .vscode/
