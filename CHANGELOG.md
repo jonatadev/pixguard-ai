@@ -5,6 +5,11 @@ Todas as alterações relevantes deste projeto são documentadas neste arquivo s
 ## [Unreleased]
 
 ### Added
+- **Eval & Red-Team Harness (`evals/` + `backend/internal/evalharness`):**
+  - Dataset versionado `evals/datasets/pixguard-golden-v1.json` com 14 cenários determinísticos (LGPD, Red-Team OWASP LLM01 e janela legal de 80 dias do MED).
+  - Pacote Go `internal/evalharness` e flags em `cmd/eval` para gerar relatórios JSON/Markdown e sincronizar Datasets, traces sanitizados, Experiment Runs e Scores no **Langfuse** (`-langfuse-sync`).
+  - Configuração **Promptfoo** em `evals/promptfoo/promptfooconfig.yaml` para validação HTTP em `/api/v1/guardrail/preview`.
+  - Pipeline **GitHub Actions CI & AI Eval Gate** (`.github/workflows/ci.yml`) com `go vet`, `go test -race`, `govulncheck`, comentário automático do Eval no PR, `ng build`, validação Docker Compose e `Gitleaks`.
 - Portal de documentação **Astro Starlight** em `docs-site/` com busca local Pagefind, diagramas Mermaid (`astro-mermaid`), script single-source-of-truth (`sync-docs.mjs`), geração automática de `llms.txt` e workflow GitHub Actions (`.github/workflows/docs.yml`) para PR check e deploy no GitHub Pages.
 
 ### Planned
