@@ -1,0 +1,21 @@
+/* PixGuard AI — Paleta Banking / Fintech (Esmeralda & Slate) */
+:root {
+  --sl-color-accent-low: #064e3b;
+  --sl-color-accent: #10b981;
+  --sl-color-accent-high: #6ee7b7;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d1fae5;
+  --sl-color-accent: #059669;
+  --sl-color-accent-high: #064e3b;
+}
+
+.mermaid {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--sl-color-hairline-light);
+  background: var(--sl-color-bg-nav);
+  overflow-x: auto;
+}

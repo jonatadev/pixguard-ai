@@ -1,0 +1,34 @@
+---
+title: PixGuard AI
+description: Copiloto Multi-Agente de Contestação PIX (MED), Bloqueio Cautelar, PLD-FT e Guardrail LGPD com SDLC AI-Native completo.
+template: splash
+hero:
+  tagline: Plataforma de engenharia AI-Native para contestações PIX / MED no ecossistema bancário brasileiro — Go 1.24, Angular 19 Material, pgvector, Langfuse v3 e AI Eval Gate.
+  actions:
+    - text: Guia Rápido Local
+      link: /pixguard-ai/guides/getting-started/
+      icon: right-arrow
+    - text: Especificações Técnicas
+      link: /pixguard-ai/specs/overview/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Pilares da Engenharia AI-Native
+
+<CardGrid stagger>
+  <Card title="Guardrail Determinístico LGPD" icon="approve-check-circle">
+    Mascara CPF, CNPJ, e-mail, telefone e chaves EVP em Go antes de qualquer chamada a LLM e bloqueia tentativas de Prompt Injection com cobertura unitária de 97%.
+  </Card>
+  <Card title="Orquestração Multi-Agente & RAG Híbrido" icon="rocket">
+    DAG controlado em Go (<code>errgroup</code>) coordenando Investigador (Tool Calling), Regulatório (<code>pgvector</code> + FTS com RRF), Decisor e Auditor/Critic sob Human-in-the-Loop.
+  </Card>
+  <Card title="LLMOps, AI Eval Gate & Observabilidade" icon="magnifier">
+    Traces OpenTelemetry OTLP no Langfuse v3, métricas Prometheus, dashboards Grafana, logs JSON no Loki e runner determinístico <code>cmd/eval</code> como portão de qualidade.
+  </Card>
+  <Card title="Spec-First & Antigravity Ready" icon="document">
+    Specs formais em <code>specs/</code>, regras hierárquicas em <code>AGENTS.md</code>, 5 Workspace Skills e índice <code>llms.txt</code> publicado junto ao portal.
+  </Card>
+</CardGrid>

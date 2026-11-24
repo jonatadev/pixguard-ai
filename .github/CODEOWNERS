@@ -7,4 +7,6 @@
 /specs/ @jonatadev
 /prompts/ @jonatadev
 /docs/regulatory/ @jonatadev
+/docs-site/ @jonatadev
 /deploy/ @jonatadev
+/.github/workflows/ @jonatadev
