@@ -8,6 +8,9 @@ Todas as alterações relevantes deste projeto são documentadas neste arquivo s
 - Corrigido o profile `langfuse` em `deploy/docker-compose.yml` para usar `cgr.dev/chainguard/minio` (substituindo `minio/minio:latest` removida do Docker Hub), healthcheck IPv4 (`127.0.0.1:8123/ping`) no ClickHouse e porta configurável via `LANGFUSE_PORT` / `LANGFUSE_BASE_URL`.
 
 ### Added
+- **TDD & Cobertura de Testes em Go (`backend/internal/`):**
+  - Adicionados testes unitários para `internal/config` (`config_test.go`), `internal/store` (`memory_test.go`, incluindo leituras concorrentes com `-race`) e `internal/telemetry` (`telemetry_test.go` com validação OTLP/Langfuse via `httptest`).
+  - Adicionado gate mínimo de cobertura de `>= 85%` em `.github/workflows/ci.yml` para `backend/internal/...`.
 - **Eval & Red-Team Harness (`evals/` + `backend/internal/evalharness`):**
   - Dataset versionado `evals/datasets/pixguard-golden-v1.json` com 14 cenários determinísticos (LGPD, Red-Team OWASP LLM01 e janela legal de 80 dias do MED).
   - Pacote Go `internal/evalharness` e flags em `cmd/eval` para gerar relatórios JSON/Markdown e sincronizar Datasets, traces sanitizados, Experiment Runs e Scores no **Langfuse** (`-langfuse-sync`).
