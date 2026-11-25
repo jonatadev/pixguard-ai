@@ -13,6 +13,9 @@ Todas as alterações relevantes deste projeto são documentadas neste arquivo s
   - `backend/internal/agents`: orquestrador paralelo em Go (`errgroup`), 4 ferramentas determinísticas, integração `google.golang.org/genai` (`gemini-3.8-flash` / `gemini-3.5-flash-lite`), `ComplianceCriticAgent` (0% PII + 80 dias MED + citações ancoradas) e fallback determinístico resiliente.
   - Endpoints `POST /api/v1/cases/{id}/analyze` (JSON e streaming **SSE** `stage`/`complete`), `POST /api/v1/cases/{id}/feedback` com envio de Scores (`analyst_decision`) para o **Langfuse**, e métricas `pixguard_agent_latency_seconds` / `pixguard_analyst_feedback_total`.
   - Mesa **Angular Material 19** atualizada com Raio-X ao vivo via SSE, exibição de `traceId`, tokens, alertas PLD-FT e fluxo de aprovação humana (**Aprovar / Ajustar / Rejeitar**).
+- **TDD & Cobertura de Testes em Go (`backend/internal/`):**
+  - Adicionados testes unitários para `internal/config` (`config_test.go`), `internal/store` (`memory_test.go`, incluindo leituras concorrentes com `-race`) e `internal/telemetry` (`telemetry_test.go` com validação OTLP/Langfuse via `httptest`).
+  - Adicionado gate mínimo de cobertura de `>= 85%` em `.github/workflows/ci.yml` para `backend/internal/...`.
 - **Eval & Red-Team Harness (`evals/` + `backend/internal/evalharness`):**
   - Dataset versionado `evals/datasets/pixguard-golden-v1.json` com 14 cenários determinísticos (LGPD, Red-Team OWASP LLM01 e janela legal de 80 dias do MED).
   - Pacote Go `internal/evalharness` e flags em `cmd/eval` para gerar relatórios JSON/Markdown e sincronizar Datasets, traces sanitizados, Experiment Runs e Scores no **Langfuse** (`-langfuse-sync`).

@@ -30,7 +30,14 @@ jobs:
 
       - name: Run go test with race detector and coverage
         working-directory: backend
-        run: go test -race -cover ./...
+        run: go test -race -coverprofile=coverage.out ./internal/...
+
+      - name: Enforce minimum coverage gate (>= 85%)
+        working-directory: backend
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub("%", "", $3); print $3}')
+          echo "Backend internal package coverage: ${total}%"
+          awk -v cov="$total" 'BEGIN { if (cov + 0 < 85.0) { print "Coverage below 85% gate!"; exit 1 } }'
 
       - name: Run AI Eval & Red-Team Harness
         id: eval
