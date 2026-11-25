@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jonatadev/pixguard-ai/internal/agents"
 	"github.com/jonatadev/pixguard-ai/internal/config"
 	"github.com/jonatadev/pixguard-ai/internal/httpapi"
+	"github.com/jonatadev/pixguard-ai/internal/rag"
 	"github.com/jonatadev/pixguard-ai/internal/store"
 	"github.com/jonatadev/pixguard-ai/internal/telemetry"
 )
@@ -35,8 +37,22 @@ func main() {
 		}()
 	}
 
+	ragIndex := loadRegulatoryIndex(ctx, logger)
+	var gen agents.JSONGenerator
+	if cfg.GeminiConfigured() {
+		g, err := agents.NewGeminiGenerator(ctx, cfg.GeminiAPIKey)
+		if err != nil {
+			logger.Warn("gemini_client_init_failed", slog.String("error", err.Error()))
+		} else {
+			gen = g
+		}
+	}
+
+	orch := agents.NewOrchestrator(ragIndex, gen, cfg.GeminiChatModel, cfg.GeminiFastModel, metrics)
+	scoreClient := telemetry.NewScoreClient(cfg)
+
 	repo := store.NewMemoryStore()
-	apiServer := httpapi.NewServer(cfg, repo, logger, metrics)
+	apiServer := httpapi.NewServerWithAgents(cfg, repo, logger, metrics, orch, scoreClient)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
@@ -64,4 +80,20 @@ func main() {
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		logger.Error("pixguard_api_shutdown_error", slog.String("error", err.Error()))
 	}
+}
+
+func loadRegulatoryIndex(ctx context.Context, logger *slog.Logger) *rag.Index {
+	for _, dir := range []string{"../docs/regulatory", "./docs/regulatory"} {
+		chunks, err := rag.LoadCorpusFromDir(dir)
+		if err != nil {
+			continue
+		}
+		idx, err := rag.NewIndex(ctx, chunks, rag.DeterministicEmbedder{Dims: 256})
+		if err == nil {
+			logger.Info("regulatory_rag_loaded", slog.String("dir", dir), slog.Int("chunks", len(chunks)))
+			return idx
+		}
+	}
+	logger.Warn("regulatory_rag_not_loaded")
+	return nil
 }

@@ -38,6 +38,8 @@ type Metrics struct {
 	HTTPRequestDuration     *prometheus.HistogramVec
 	GuardrailPIIRedactions  *prometheus.CounterVec
 	GuardrailInjectionBlock prometheus.Counter
+	AgentLatency            *prometheus.HistogramVec
+	AnalystFeedbackTotal    *prometheus.CounterVec
 }
 
 func NewMetrics() *Metrics {
@@ -79,7 +81,24 @@ func NewMetrics() *Metrics {
 		},
 	)
 
-	reg.MustRegister(httpRequests, httpDuration, piiRedactions, injectionBlocks)
+	agentLatency := prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "pixguard_agent_latency_seconds",
+			Help:    "Latency distribution per multi-agent stage in seconds.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"agent"},
+	)
+
+	analystFeedback := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "pixguard_analyst_feedback_total",
+			Help: "Total Human-in-the-Loop analyst decisions submitted.",
+		},
+		[]string{"decision"},
+	)
+
+	reg.MustRegister(httpRequests, httpDuration, piiRedactions, injectionBlocks, agentLatency, analystFeedback)
 
 	return &Metrics{
 		Registry:                reg,
@@ -87,6 +106,8 @@ func NewMetrics() *Metrics {
 		HTTPRequestDuration:     httpDuration,
 		GuardrailPIIRedactions:  piiRedactions,
 		GuardrailInjectionBlock: injectionBlocks,
+		AgentLatency:            agentLatency,
+		AnalystFeedbackTotal:    analystFeedback,
 	}
 }
 

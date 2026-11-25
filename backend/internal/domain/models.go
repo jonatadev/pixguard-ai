@@ -79,3 +79,28 @@ type ReadyResponse struct {
 	Integrations map[string]bool   `json:"integrations"`
 	Models       map[string]string `json:"models"`
 }
+
+type AnalystDecision string
+
+const (
+	DecisionAprovado  AnalystDecision = "APROVADO"
+	DecisionEditado   AnalystDecision = "EDITADO"
+	DecisionRejeitado AnalystDecision = "REJEITADO"
+)
+
+type AnalystFeedbackRequest struct {
+	TraceID  string          `json:"traceId"`
+	Decision AnalystDecision `json:"decision"`
+	Notes    string          `json:"notes"`
+}
+
+type AnalystFeedbackRecord struct {
+	ID             string          `json:"id"`
+	CaseID         string          `json:"caseId"`
+	TraceID        string          `json:"traceId"`
+	Decision       AnalystDecision `json:"decision"`
+	Notes          string          `json:"notes"`
+	UpdatedStatus  CaseStatus      `json:"updatedStatus"`
+	LangfuseSynced bool            `json:"langfuseSynced"`
+	CreatedAt      time.Time       `json:"createdAt"`
+}

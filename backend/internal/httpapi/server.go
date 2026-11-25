@@ -2,11 +2,14 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/jonatadev/pixguard-ai/internal/agents"
 	"github.com/jonatadev/pixguard-ai/internal/config"
 	"github.com/jonatadev/pixguard-ai/internal/domain"
 	"github.com/jonatadev/pixguard-ai/internal/guardrail"
@@ -20,22 +23,41 @@ import (
 const medMaxWindowDays = 80
 
 type Server struct {
-	cfg     config.Config
-	repo    store.CaseRepository
-	logger  *slog.Logger
-	metrics *telemetry.Metrics
-	tracer  trace.Tracer
-	mux     *http.ServeMux
+	cfg         config.Config
+	repo        store.CaseRepository
+	logger      *slog.Logger
+	metrics     *telemetry.Metrics
+	orch        *agents.Orchestrator
+	scoreClient telemetry.ScoreClient
+	tracer      trace.Tracer
+	mux         *http.ServeMux
 }
 
 func NewServer(cfg config.Config, repo store.CaseRepository, logger *slog.Logger, metrics *telemetry.Metrics) *Server {
+	orch := agents.NewOrchestrator(nil, nil, cfg.GeminiChatModel, cfg.GeminiFastModel, metrics)
+	return NewServerWithAgents(cfg, repo, logger, metrics, orch, telemetry.NewScoreClient(cfg))
+}
+
+func NewServerWithAgents(
+	cfg config.Config,
+	repo store.CaseRepository,
+	logger *slog.Logger,
+	metrics *telemetry.Metrics,
+	orch *agents.Orchestrator,
+	scoreClient telemetry.ScoreClient,
+) *Server {
+	if orch == nil {
+		orch = agents.NewOrchestrator(nil, nil, cfg.GeminiChatModel, cfg.GeminiFastModel, metrics)
+	}
 	s := &Server{
-		cfg:     cfg,
-		repo:    repo,
-		logger:  logger,
-		metrics: metrics,
-		tracer:  otel.Tracer("pixguard-ai/httpapi"),
-		mux:     http.NewServeMux(),
+		cfg:         cfg,
+		repo:        repo,
+		logger:      logger,
+		metrics:     metrics,
+		orch:        orch,
+		scoreClient: scoreClient,
+		tracer:      otel.Tracer("pixguard-ai/httpapi"),
+		mux:         http.NewServeMux(),
 	}
 	s.registerRoutes()
 	return s
@@ -51,6 +73,8 @@ func (s *Server) registerRoutes() {
 	s.mux.Handle("GET /metrics", s.metrics.Handler())
 	s.mux.HandleFunc("GET /api/v1/cases", s.handleListCases)
 	s.mux.HandleFunc("GET /api/v1/cases/{id}", s.handleGetCase)
+	s.mux.HandleFunc("POST /api/v1/cases/{id}/analyze", s.handleAnalyzeCase)
+	s.mux.HandleFunc("POST /api/v1/cases/{id}/feedback", s.handleSubmitFeedback)
 	s.mux.HandleFunc("POST /api/v1/guardrail/preview", s.handleGuardrailPreview)
 }
 
@@ -109,6 +133,113 @@ func (s *Server) handleGetCase(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleAnalyzeCase(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	c, ok := s.repo.GetByID(id)
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{
+			"error": "contestacao PIX nao encontrada",
+		})
+		return
+	}
+
+	if c.Status == domain.StatusPendente {
+		s.repo.UpdateStatus(c.ID, domain.StatusEmAnalise)
+		c.Status = domain.StatusEmAnalise
+	}
+
+	if strings.Contains(r.Header.Get("Accept"), "text/event-stream") {
+		s.streamAnalysisSSE(w, r, c)
+		return
+	}
+
+	res := s.orch.Analyze(r.Context(), c, nil)
+	writeJSON(w, http.StatusOK, res)
+}
+
+func (s *Server) streamAnalysisSSE(w http.ResponseWriter, r *http.Request, c domain.PixCase) {
+	flusher, hasFlusher := w.(http.Flusher)
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+	w.WriteHeader(http.StatusOK)
+
+	writeSSE := func(eventName string, payload any) {
+		raw, err := json.Marshal(payload)
+		if err != nil {
+			return
+		}
+		_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", eventName, raw)
+		if hasFlusher {
+			flusher.Flush()
+		}
+	}
+
+	res := s.orch.Analyze(r.Context(), c, func(ev agents.AnalysisEvent) {
+		writeSSE("stage", ev)
+	})
+	writeSSE("complete", res)
+}
+
+func (s *Server) handleSubmitFeedback(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	c, ok := s.repo.GetByID(id)
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{
+			"error": "contestacao PIX nao encontrada",
+		})
+		return
+	}
+
+	var req domain.AnalystFeedbackRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "JSON invalido no corpo da requisicao",
+		})
+		return
+	}
+
+	var nextStatus domain.CaseStatus
+	switch req.Decision {
+	case domain.DecisionAprovado, domain.DecisionEditado:
+		nextStatus = domain.StatusAprovado
+	case domain.DecisionRejeitado:
+		nextStatus = domain.StatusRejeitado
+	default:
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "decision deve ser APROVADO, EDITADO ou REJEITADO",
+		})
+		return
+	}
+
+	s.repo.UpdateStatus(c.ID, nextStatus)
+	if s.metrics != nil && s.metrics.AnalystFeedbackTotal != nil {
+		s.metrics.AnalystFeedbackTotal.WithLabelValues(string(req.Decision)).Inc()
+	}
+
+	synced, err := s.scoreClient.PostAnalystDecision(r.Context(), req.TraceID, req.Decision, req.Notes)
+	if err != nil {
+		s.logger.WarnContext(r.Context(), "langfuse_score_sync_failed",
+			slog.String("case_id", c.ID),
+			slog.String("error", err.Error()),
+		)
+	}
+
+	rec := domain.AnalystFeedbackRecord{
+		ID:             fmt.Sprintf("FB-%d", time.Now().UTC().UnixNano()),
+		CaseID:         c.ID,
+		TraceID:        req.TraceID,
+		Decision:       req.Decision,
+		Notes:          strings.TrimSpace(req.Notes),
+		UpdatedStatus:  nextStatus,
+		LangfuseSynced: synced,
+		CreatedAt:      time.Now().UTC(),
+	}
+	s.repo.SaveFeedback(rec)
+	writeJSON(w, http.StatusOK, rec)
+}
+
 func (s *Server) handleGuardrailPreview(w http.ResponseWriter, r *http.Request) {
 	var req domain.GuardrailPreviewRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
@@ -147,6 +278,12 @@ type statusRecorder struct {
 func (sr *statusRecorder) WriteHeader(code int) {
 	sr.status = code
 	sr.ResponseWriter.WriteHeader(code)
+}
+
+func (sr *statusRecorder) Flush() {
+	if flusher, ok := sr.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
 
 func (s *Server) observabilityMiddleware(next http.Handler) http.Handler {
