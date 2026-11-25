@@ -33,10 +33,10 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.AppEnv != "development" {
 		t.Fatalf("expected default AppEnv development, got %q", cfg.AppEnv)
 	}
-	if cfg.GeminiChatModel != "gemini-3-flash-preview" {
+	if cfg.GeminiChatModel != "gemini-3.8-flash" {
 		t.Fatalf("unexpected default GeminiChatModel: %q", cfg.GeminiChatModel)
 	}
-	if cfg.GeminiFastModel != "gemini-2.5-flash-lite" {
+	if cfg.GeminiFastModel != "gemini-3.5-flash-lite" {
 		t.Fatalf("unexpected default GeminiFastModel: %q", cfg.GeminiFastModel)
 	}
 	if cfg.GeminiEmbeddingModel != "gemini-embedding-001" {

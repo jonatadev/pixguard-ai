@@ -12,11 +12,15 @@ import (
 type CaseRepository interface {
 	List(risk, status string) []domain.PixCase
 	GetByID(id string) (domain.PixCase, bool)
+	UpdateStatus(id string, status domain.CaseStatus) bool
+	SaveFeedback(rec domain.AnalystFeedbackRecord)
+	ListFeedback(caseID string) []domain.AnalystFeedbackRecord
 }
 
 type MemoryStore struct {
-	mu    sync.RWMutex
-	cases []domain.PixCase
+	mu       sync.RWMutex
+	cases    []domain.PixCase
+	feedback []domain.AnalystFeedbackRecord
 }
 
 func NewMemoryStore() *MemoryStore {
@@ -127,4 +131,36 @@ func (s *MemoryStore) GetByID(id string) (domain.PixCase, bool) {
 		}
 	}
 	return domain.PixCase{}, false
+}
+
+func (s *MemoryStore) UpdateStatus(id string, status domain.CaseStatus) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for i := range s.cases {
+		if strings.EqualFold(s.cases[i].ID, id) {
+			s.cases[i].Status = status
+			return true
+		}
+	}
+	return false
+}
+
+func (s *MemoryStore) SaveFeedback(rec domain.AnalystFeedbackRecord) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.feedback = append(s.feedback, rec)
+}
+
+func (s *MemoryStore) ListFeedback(caseID string) []domain.AnalystFeedbackRecord {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]domain.AnalystFeedbackRecord, 0)
+	for _, f := range s.feedback {
+		if strings.EqualFold(f.CaseID, caseID) {
+			out = append(out, f)
+		}
+	}
+	return out
 }

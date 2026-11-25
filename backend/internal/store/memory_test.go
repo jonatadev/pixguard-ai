@@ -92,3 +92,36 @@ func TestMemoryStoreConcurrentReads(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestMemoryStoreUpdateStatusAndFeedback(t *testing.T) {
+	s := NewMemoryStore()
+
+	if !s.UpdateStatus("pix-2026-0001", domain.StatusAprovado) {
+		t.Fatalf("expected UpdateStatus to succeed for existing case")
+	}
+	updated, ok := s.GetByID("PIX-2026-0001")
+	if !ok || updated.Status != domain.StatusAprovado {
+		t.Fatalf("expected updated status APROVADO, got %+v", updated)
+	}
+	if s.UpdateStatus("PIX-9999-0000", domain.StatusRejeitado) {
+		t.Fatalf("expected UpdateStatus to return false for unknown case")
+	}
+
+	s.SaveFeedback(domain.AnalystFeedbackRecord{
+		CaseID:   "PIX-2026-0001",
+		Decision: domain.DecisionAprovado,
+		Notes:    "MED confirmado pela mesa",
+	})
+	s.SaveFeedback(domain.AnalystFeedbackRecord{
+		CaseID:   "PIX-2026-0002",
+		Decision: domain.DecisionEditado,
+	})
+
+	list := s.ListFeedback("pix-2026-0001")
+	if len(list) != 1 || list[0].Decision != domain.DecisionAprovado {
+		t.Fatalf("expected 1 feedback record for PIX-2026-0001, got %+v", list)
+	}
+	if empty := s.ListFeedback("PIX-9999-0000"); len(empty) != 0 {
+		t.Fatalf("expected empty feedback list for unknown case, got %d", len(empty))
+	}
+}

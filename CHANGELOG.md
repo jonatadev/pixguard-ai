@@ -8,6 +8,11 @@ Todas as alterações relevantes deste projeto são documentadas neste arquivo s
 - Corrigido o profile `langfuse` em `deploy/docker-compose.yml` para usar `cgr.dev/chainguard/minio` (substituindo `minio/minio:latest` removida do Docker Hub), healthcheck IPv4 (`127.0.0.1:8123/ping`) no ClickHouse e porta configurável via `LANGFUSE_PORT` / `LANGFUSE_BASE_URL`.
 
 ### Added
+- **Fase 2 — Motor Multi-Agente, RAG Híbrido, SSE & Human-in-the-Loop:**
+  - `backend/internal/rag`: chunker estrutural Markdown e motor de busca híbrida (BM25 PT-BR + vetorial com fusão **RRF `k=60`**) sobre `docs/regulatory/`.
+  - `backend/internal/agents`: orquestrador paralelo em Go (`errgroup`), 4 ferramentas determinísticas, integração `google.golang.org/genai` (`gemini-3.8-flash` / `gemini-3.5-flash-lite`), `ComplianceCriticAgent` (0% PII + 80 dias MED + citações ancoradas) e fallback determinístico resiliente.
+  - Endpoints `POST /api/v1/cases/{id}/analyze` (JSON e streaming **SSE** `stage`/`complete`), `POST /api/v1/cases/{id}/feedback` com envio de Scores (`analyst_decision`) para o **Langfuse**, e métricas `pixguard_agent_latency_seconds` / `pixguard_analyst_feedback_total`.
+  - Mesa **Angular Material 19** atualizada com Raio-X ao vivo via SSE, exibição de `traceId`, tokens, alertas PLD-FT e fluxo de aprovação humana (**Aprovar / Ajustar / Rejeitar**).
 - **TDD & Cobertura de Testes em Go (`backend/internal/`):**
   - Adicionados testes unitários para `internal/config` (`config_test.go`), `internal/store` (`memory_test.go`, incluindo leituras concorrentes com `-race`) e `internal/telemetry` (`telemetry_test.go` com validação OTLP/Langfuse via `httptest`).
   - Adicionado gate mínimo de cobertura de `>= 85%` em `.github/workflows/ci.yml` para `backend/internal/...`.

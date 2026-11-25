@@ -1,6 +1,6 @@
 # Spec 001 — Arquitetura do Sistema PixGuard AI
 
-- **Status:** Fase 1 Implementada | Fase 2–4 Planejadas
+- **Status:** Fases 1 e 2 Implementadas | Persistência PostgreSQL & Feedback Loop Planejados
 - **Owner:** `@jonatadev`
 - **Repositório:** `https://github.com/jonatadev/pixguard-ai`
 
@@ -90,12 +90,12 @@ Definido em [`backend/migrations/001_init.sql`](../backend/migrations/001_init.s
 | `GET /api/v1/cases/{id}` | Detalhe do caso com `sanitizedDescription`, `guardrailReport` e `medWindowValid` (`daysSinceTx <= 80`) | `domain.CaseDetailResponse` (`404` se inexistente) |
 | `POST /api/v1/guardrail/preview` | Testa sanitização LGPD e detecção de Prompt Injection em texto arbitrário (limite 1 MB) | Req: `{"text": string}` → Resp: `domain.GuardrailPreviewResponse` |
 
-### 5.2 Endpoints Planejados (Fase 2)
+### 5.2 Endpoints da Fase 2 (Implementados)
 
 | Método & Rota | Descrição |
 | :--- | :--- |
-| `POST /api/v1/cases/{id}/analyze` | Executa o pipeline multi-agente com streaming **Server-Sent Events (SSE)** emitindo progresso de cada agente e o parecer final |
-| `POST /api/v1/cases/{id}/feedback` | Registra decisão do analista (`APROVADO`, `EDITADO`, `REJEITADO`), atualiza `analyst_feedback` e envia Score ao Langfuse |
+| `POST /api/v1/cases/{id}/analyze` | Executa o pipeline multi-agente (`Accept: text/event-stream` para streaming SSE `stage`/`complete` ou JSON completo) |
+| `POST /api/v1/cases/{id}/feedback` | Registra decisão do analista (`APROVADO`, `EDITADO`, `REJEITADO`), atualiza o status do caso e envia Score `analyst_decision` ao Langfuse |
 
 ---
 
