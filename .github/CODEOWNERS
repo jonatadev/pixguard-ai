@@ -8,5 +8,6 @@
 /prompts/ @jonatadev
 /docs/regulatory/ @jonatadev
 /docs-site/ @jonatadev
+/evals/ @jonatadev
 /deploy/ @jonatadev
 /.github/workflows/ @jonatadev

@@ -1,0 +1,125 @@
+name: CI & AI Eval Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  backend-and-eval-gate:
+    name: Go Tests, Security & AI Eval Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go 1.26
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run go vet
+        working-directory: backend
+        run: go vet ./...
+
+      - name: Run go test with race detector and coverage
+        working-directory: backend
+        run: go test -race -cover ./...
+
+      - name: Run AI Eval & Red-Team Harness
+        id: eval
+        working-directory: backend
+        run: go run ./cmd/eval -markdown-out ../eval-report.md -json-out ../eval-report.json
+
+      - name: Run govulncheck
+        working-directory: backend
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+      - name: Publish Eval report to Job Summary
+        if: always()
+        run: |
+          if [ -f eval-report.md ]; then
+            cat eval-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Eval artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: |
+            eval-report.md
+            eval-report.json
+          if-no-files-found: ignore
+
+      - name: Comment AI Eval Gate on Pull Request
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('eval-report.md')) return;
+            const body = fs.readFileSync('eval-report.md', 'utf8');
+            const marker = '## PixGuard AI — Eval & Red-Team Harness';
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  frontend-build:
+    name: Angular Material Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build production bundle
+        working-directory: frontend
+        run: npm run build
+
+  infra-and-secrets:
+    name: Docker Compose & Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose profiles
+        run: docker compose -f deploy/docker-compose.yml --profile monitoring --profile langfuse config --quiet
+
+      - name: Run Gitleaks secret scan
+        run: docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source=/repo --no-git --redact

@@ -51,6 +51,7 @@ flowchart TD
 ├── deploy/                   # Docker Compose + Prometheus + Grafana + Loki + Langfuse v3
 ├── docs/regulatory/          # Corpus regulatório simulado (Bacen MED, Bloqueio Cautelar, LGPD)
 ├── docs-site/                # Portal de documentação Astro Starlight + Mermaid + llms.txt
+├── evals/                    # Eval & Red-Team Harness (dataset golden JSON + Promptfoo OWASP LLM)
 ├── prompts/                  # Prompts versionados em YAML com contrato de saída
 ├── CHANGELOG.md              # Histórico de releases SemVer
 └── CONTRIBUTING.md           # Fluxo Spec-First, Conventional Commits e checklist de PR
@@ -86,7 +87,7 @@ Este repositório adota **Spec-Driven Development** e **Eval-First** como cidad�
 
 > **Importante no Windows:** Caso o PowerShell bloqueie scripts `.ps1`, use `npm.cmd` e `ng.cmd`.
 
-### 1. Subir apenas o Backend Go
+### 1. Subir apenas o Backend Go & Eval Harness
 ```powershell
 cd backend
 go test -v -cover ./...
@@ -94,6 +95,7 @@ go run ./cmd/eval
 go run ./cmd/api
 ```
 - API disponível em `http://localhost:8080` (`/healthz`, `/readyz`, `/metrics`, `/api/v1/cases`).
+- Para sincronizar um Experiment Run com o Langfuse e/ou rodar a bateria Promptfoo, consulte [`evals/README.md`](./evals/README.md).
 
 ### 2. Subir o Frontend Angular Material (modo dev com proxy)
 ```powershell

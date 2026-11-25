@@ -1,8 +1,8 @@
 # Spec 004 — LLMOps, AI Eval Gate, Observabilidade & CI/CD
 
-- **Status:** Eval CLI & Stack Docker Implementados | CI/CD GitHub Actions Planejado (Fase 3) | Feedback Loop Planejado (Fase 4)
+- **Status:** Eval Harness, Datasets & CI Gate Implementados (Fase 1/3) | Feedback Loop Automático Planejado (Fase 4)
 - **Owner:** `@jonatadev`
-- **Artefatos Relacionados:** [`backend/cmd/eval/main.go`](../backend/cmd/eval/main.go), [`backend/internal/telemetry/telemetry.go`](../backend/internal/telemetry/telemetry.go), [`deploy/`](../deploy/)
+- **Artefatos Relacionados:** [`evals/`](../evals/README.md), [`backend/internal/evalharness/`](../backend/internal/evalharness/), [`backend/cmd/eval/main.go`](../backend/cmd/eval/main.go), [`backend/internal/telemetry/telemetry.go`](../backend/internal/telemetry/telemetry.go), [`deploy/`](../deploy/), [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
 ---
 
@@ -10,28 +10,41 @@
 
 ```mermaid
 flowchart LR
-    DEV[Código, Specs & Prompts<br/>GitHub jonatadev/pixguard-ai] --> CI[CI + DevSecOps<br/>go test -race, golangci-lint, govulncheck, ng build, Gitleaks, Trivy]
-    CI --> EVAL[AI Eval Gate<br/>go run ./cmd/eval]
+    DEV[Código, Specs, Datasets & Prompts<br/>GitHub jonatadev/pixguard-ai] --> CI[CI + DevSecOps<br/>go test -race, govulncheck, ng build, Gitleaks]
+    CI --> EVAL[AI Eval Gate & Harness<br/>cmd/eval + Promptfoo OWASP LLM]
+    EVAL -->|Experiment Runs & Scores| LF[Langfuse v3 Self-Hosted<br/>Traces + Datasets + Evaluators]
     EVAL --> CD[Build & Publish<br/>Docker + GHCR]
     CD --> PROD[PixGuard AI Runtime<br/>API Go + Angular Material]
-    PROD -->|OTLP Traces v4| LF[Langfuse v3 Self-Hosted]
+    PROD -->|OTLP Traces v4| LF
     PROD -->|/metrics & JSON logs| MON[Prometheus + Grafana + Loki]
     LF -->|Divergências 👍/👎| DEV
 ```
 
 ---
 
-## 2. AI Eval Gate (`backend/cmd/eval`)
+## 2. AI Eval & Red-Team Harness (`evals/` + `backend/internal/evalharness`)
 
-### 2.1 Critérios Atuais (Fase 1 — Bloqueantes)
+### 2.1 Dataset Versionado (`evals/datasets/pixguard-golden-v1.json`)
+Dataset ouro determinístico com **14 cenários** divididos em 3 categorias:
+- **`lgpd` (6 casos):** mascaramento de CPF formatado/contextual, CNPJ, e-mail, telefone BR, chave EVP UUID, caso PLD-FT e narrativa limpa sem falsos positivos.
+- **`red_team_injection` (5 casos):** vetores OWASP LLM01 em PT-BR e EN (*ignore instructions*, *force refund*, *system prompt probe*, *role hijack*, *jailbreak*).
+- **`med_business_rule` (3 casos):** validação determinística da janela legal de 80 dias do MED (dentro, no limite exato de 80 dias e expirado com 94 dias).
+
+### 2.2 Runner Go (`backend/cmd/eval`) & Promptfoo (`evals/promptfoo/`)
+- **`backend/internal/evalharness`:** carrega o dataset JSON, valida 6 invariantes por caso (`pii_zero_leakage`, `required_tokens_present`, `min_redactions_met`, `injection_match`, `safe_for_llm_match`, `med_window_match`), gera relatório JSON (`-json-out`) e tabela Markdown (`-markdown-out`) para Pull Requests.
+- **Sincronização com Langfuse (`-langfuse-sync -run-name ...`):** realiza upsert do dataset e dos `dataset-items`, envia traces OTLP/ingestion sem PII bruto, vincula ao Experiment Run (`dataset-run-items`) e publica Scores (`eval_passed`, `pii_zero_leakage`, `injection_accuracy`).
+- **Promptfoo (`evals/promptfoo/promptfooconfig.yaml`):** harness complementar para testar o endpoint HTTP `POST /api/v1/guardrail/preview` em bateria de assertions JS/JSON e red-team OWASP LLM.
+
+### 2.3 Critérios Atuais (Bloqueantes no PR)
 
 | Métrica de Eval | Limite Exigido | Fonte |
 | :--- | :--- | :--- |
-| Vazamento de PII após `guardrail.Sanitize` | **0%** (`0` substrings proibidas) | `backend/cmd/eval/main.go` |
-| Detecção de Prompt Injection (dataset red-team) | **100%** dos casos injetados flagrados | `backend/cmd/eval/main.go` |
-| Cobertura unitária do pacote `internal/guardrail` | **`>= 90%`** (atual: `97,0%`) | `go test -cover ./...` |
+| Vazamento de PII após `guardrail.Sanitize` | **0%** (`0` substrings proibidas) | `evals/datasets/pixguard-golden-v1.json` |
+| Detecção de Prompt Injection (dataset red-team) | **100%** dos casos injetados flagrados | `evals/datasets/pixguard-golden-v1.json` |
+| Acurácia na regra determinística de 80 dias do MED | **100%** dos casos temporais | `internal/evalharness` |
+| Cobertura unitária de segurança (`internal/guardrail`) | **`>= 90%`** (atual: `97,0%`) | `go test -cover ./...` |
 
-### 2.2 Critérios Planejados (Fase 2–3 — Multi-Agente & RAG)
+### 2.4 Critérios Planejados (Fase 2–4 — Multi-Agente & RAG)
 
 | Métrica de Eval | Meta de Aprovação no PR |
 | :--- | :--- |
@@ -64,11 +77,10 @@ Implementada em [`backend/internal/telemetry/telemetry.go`](../backend/internal/
 
 ---
 
-## 5. Pipeline CI/CD GitHub Actions (Especificação Fase 3)
+## 5. Pipeline CI/CD GitHub Actions (`.github/workflows/ci.yml`)
 
-Workflows planejados em `.github/workflows/`:
-1. **Backend Go:** `golangci-lint`, `go vet ./...`, `go test -race -cover ./...`, `govulncheck ./...`.
-2. **Frontend Angular:** `npm ci`, `npm run build` (e `ng test --watch=false --browsers=ChromeHeadless` quando houver Chrome/Chromium no runner).
-3. **DevSecOps:** `Gitleaks` (prevenção de segredos) e `Trivy` (scan das imagens `backend/Dockerfile` e `frontend/Dockerfile`).
-4. **AI Eval Gate:** `go run ./cmd/eval` com sumário postado em Pull Requests.
-5. **CD (branch `main` / tags `v*`):** Build e push de imagens para `ghcr.io/jonatadev/pixguard-ai-api` e `ghcr.io/jonatadev/pixguard-ai-web`.
+Workflow ativo de CI + AI Eval Gate em Pull Requests e pushes na `main`:
+1. **Job `backend-and-eval-gate`:** Go `1.24`, `go vet ./...`, `go test -race -cover ./...`, `govulncheck ./...`, execução do `cmd/eval` gerando relatório Markdown/JSON no `$GITHUB_STEP_SUMMARY`, artefato `eval-report` e comentário automático no PR.
+2. **Job `frontend-build`:** Node `22`, `npm ci` e `npm run build` em `frontend/`.
+3. **Job `infra-and-secrets`:** validação de `deploy/docker-compose.yml` (perfis `monitoring` e `langfuse`) e scan de segredos com `Gitleaks`.
+4. **CD (futuro):** scan `Trivy` e publicação de imagens em `ghcr.io/jonatadev/pixguard-ai-api` e `ghcr.io/jonatadev/pixguard-ai-web`.
