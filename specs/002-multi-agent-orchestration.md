@@ -1,6 +1,6 @@
 # Spec 002 — Orquestração Multi-Agente & RAG Híbrido
 
-- **Status:** Contratos & Prompts v1 Definidos | Motor Go Planejado para Fase 2
+- **Status:** Implementado (Fase 2 — Go `errgroup` + `google.golang.org/genai` + RAG Híbrido + OTel/Langfuse)
 - **Owner:** `@jonatadev`
 - **Prompts Relacionados:** [`prompts/*.v1.yaml`](../prompts/)
 - **Corpus Regulatório:** [`docs/regulatory/`](../docs/regulatory/)
@@ -40,10 +40,10 @@ flowchart TD
 
 | Ordem | Agente | Prompt YAML | Modelo Padrão | Temp | Função & Limite |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **2a** | `FraudInvestigatorAgent` | [`prompts/fraud-investigator.v1.yaml`](../prompts/fraud-investigator.v1.yaml) | `GEMINI_CHAT_MODEL` (`gemini-3-flash-preview`) | `0.1` | Coleta sinais objetivos via Tool Calling antes de inferir risco; trata narrativa do cliente como dado não confiável. |
-| **2b** | `RegulatoryRAGAgent` | [`prompts/regulatory-rag.v1.yaml`](../prompts/regulatory-rag.v1.yaml) | `GEMINI_FAST_MODEL` (`gemini-2.5-flash-lite`) | `0.0` | Recupera e fundamenta regras nos trechos de `docs/regulatory/`; proibido extrapolar além das citações recuperadas. |
-| **3** | `AdjudicatorAgent` | [`prompts/adjudicator.v1.yaml`](../prompts/adjudicator.v1.yaml) | `GEMINI_CHAT_MODEL` (`gemini-3-flash-preview`) | `0.1` | Sintetiza evidências do Investigador e citações do Regulatório em parecer estruturado + rascunho de mensagem ao cliente sem PII. |
-| **4** | `ComplianceCriticAgent` | [`prompts/compliance-critic.v1.yaml`](../prompts/compliance-critic.v1.yaml) | `GEMINI_FAST_MODEL` (`gemini-2.5-flash-lite`) | `0.0` | Audita groundedness das citações, aderência à janela de 80 dias do MED e ausência absoluta de PII no parecer. |
+| **2a** | `FraudInvestigatorAgent` | [`prompts/fraud-investigator.v1.yaml`](../prompts/fraud-investigator.v1.yaml) | `GEMINI_CHAT_MODEL` (`gemini-3.8-flash`) | `0.1` | Coleta sinais objetivos via Tool Calling antes de inferir risco; trata narrativa do cliente como dado não confiável. |
+| **2b** | `RegulatoryRAGAgent` | [`prompts/regulatory-rag.v1.yaml`](../prompts/regulatory-rag.v1.yaml) | `GEMINI_FAST_MODEL` (`gemini-3.5-flash-lite`) | `0.0` | Recupera e fundamenta regras nos trechos de `docs/regulatory/`; proibido extrapolar além das citações recuperadas. |
+| **3** | `AdjudicatorAgent` | [`prompts/adjudicator.v1.yaml`](../prompts/adjudicator.v1.yaml) | `GEMINI_CHAT_MODEL` (`gemini-3.8-flash`) | `0.1` | Sintetiza evidências do Investigador e citações do Regulatório em parecer estruturado + rascunho de mensagem ao cliente sem PII. |
+| **4** | `ComplianceCriticAgent` | [`prompts/compliance-critic.v1.yaml`](../prompts/compliance-critic.v1.yaml) | `GEMINI_FAST_MODEL` (`gemini-3.5-flash-lite`) | `0.0` | Audita groundedness das citações, aderência à janela de 80 dias do MED e ausência absoluta de PII no parecer. |
 
 ### Contratos de Saída (`output_contract.required`)
 

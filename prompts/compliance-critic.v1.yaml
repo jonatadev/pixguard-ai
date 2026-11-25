@@ -1,6 +1,6 @@
 id: compliance-critic
-version: "1.0.0"
-model: gemini-2.5-flash-lite
+version: "1.1.0"
+model: gemini-3.5-flash-lite
 temperature: 0.0
 description: Audits the adjudicator output for citation grounding, 80-day MED compliance, and zero PII leakage.
 system_prompt: |
