@@ -6,6 +6,14 @@ Construído com **Go 1.24** no backend, **Angular 19 + Angular Material** no fro
 
 ---
 
+## Preview da Mesa de Análise
+
+![Mesa de Análise PIX/MED — PixGuard AI](./docs/assets/pixguard-desk.png)
+
+*Mesa de análise em **Angular 19 + Angular Material** exibindo a fila de contestações PIX (MED), indicadores de risco/prazo legal (80 dias) e inspeção em tempo real do **Guardrail LGPD** (redação automática de PII antes do envio ao LLM).*
+
+---
+
 ## Arquitetura do Sistema
 
 ```mermaid
