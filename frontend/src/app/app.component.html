@@ -178,12 +178,128 @@
 
                 <mat-divider></mat-divider>
 
-                <div class="next-phase-banner">
-                  <mat-icon>auto_awesome</mat-icon>
-                  <span>
-                    <strong>Próxima fase:</strong> Execução Multi-Agente (Investigador + RAG Bacen + Decisor + Auditor) com trace OTLP no Langfuse.
-                  </span>
+                <div class="agent-actions-bar">
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    [disabled]="analyzingCase()"
+                    (click)="runMultiAgentAnalysis()"
+                  >
+                    <mat-icon>auto_awesome</mat-icon>
+                    {{ analyzingCase() ? 'Executando Agentes (SSE)...' : 'Executar Análise Multi-Agente (SSE)' }}
+                  </button>
                 </div>
+
+                @if (analyzingCase()) {
+                  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                }
+
+                @if (analysisError(); as err) {
+                  <div class="badge badge-alto">{{ err }}</div>
+                }
+
+                @if (analysisEvents().length > 0) {
+                  <div class="timeline-box">
+                    <h4>Raio-X Multi-Agente em Tempo Real (SSE)</h4>
+                    <ul class="timeline-list">
+                      @for (ev of analysisEvents(); track $index) {
+                        <li>
+                          <span class="badge" [class]="ev.status === 'completed' ? 'badge-ok' : ev.status === 'blocked' ? 'badge-alto' : 'badge-medio'">
+                            {{ ev.stage }}
+                          </span>
+                          <span>{{ ev.message }}</span>
+                          <small class="muted-ms">({{ ev.latencyMs }}ms)</small>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (analysisResult(); as ar) {
+                  <div class="verdict-card">
+                    <div class="pill-row">
+                      <span class="badge" [class]="ar.adjudicator.elegivel_med ? 'badge-ok' : 'badge-medio'">
+                        MED: {{ ar.adjudicator.elegivel_med ? 'ELEGÍVEL' : 'INDEFERIR' }}
+                      </span>
+                      <span class="badge badge-info">{{ ar.adjudicator.acao_recomendada }}</span>
+                      <span class="badge" [class]="ar.critic.approved ? 'badge-ok' : 'badge-alto'">
+                        Critic: {{ ar.critic.approved ? 'APROVADO' : 'REVISÃO PRIORITÁRIA' }}
+                      </span>
+                      @if (ar.adjudicator.sinalizar_pldft) {
+                        <span class="badge badge-alto">Alerta PLD-FT / COAF</span>
+                      }
+                    </div>
+
+                    <p class="verdict-meta">
+                      Modo: <code>{{ ar.mode }}</code>
+                      @if (ar.traceId) {
+                        · Trace ID: <code>{{ ar.traceId }}</code>
+                      }
+                      @if (ar.tokenUsage.totalTokens > 0) {
+                        · Tokens: <code>{{ ar.tokenUsage.totalTokens }}</code>
+                      }
+                    </p>
+
+                    <h4>Justificativa Fundamentada</h4>
+                    <p class="code-box safe-box">{{ ar.adjudicator.justificativa_citada }}</p>
+
+                    <h4>Rascunho de Resposta ao Cliente (Zero PII)</h4>
+                    <p class="code-box">{{ ar.adjudicator.mensagem_cliente }}</p>
+
+                    <mat-divider></mat-divider>
+
+                    <h4>Decisão Human-in-the-Loop (Score → Langfuse)</h4>
+                    <mat-form-field appearance="outline" class="full-width">
+                      <mat-label>Parecer / Observação do Analista</mat-label>
+                      <input
+                        matInput
+                        [ngModel]="analystNotes()"
+                        (ngModelChange)="analystNotes.set($event)"
+                        placeholder="Ex.: Validado enquadramento Art. 41-B e conta recebedora"
+                      />
+                    </mat-form-field>
+
+                    <div class="preset-row">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        [disabled]="submittingFeedback()"
+                        (click)="submitAnalystFeedback('APROVADO')"
+                      >
+                        <mat-icon>thumb_up</mat-icon>
+                        Aprovar
+                      </button>
+                      <button
+                        mat-stroked-button
+                        color="primary"
+                        [disabled]="submittingFeedback()"
+                        (click)="submitAnalystFeedback('EDITADO')"
+                      >
+                        <mat-icon>edit</mat-icon>
+                        Ajustar
+                      </button>
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        [disabled]="submittingFeedback()"
+                        (click)="submitAnalystFeedback('REJEITADO')"
+                      >
+                        <mat-icon>thumb_down</mat-icon>
+                        Rejeitar
+                      </button>
+                    </div>
+
+                    @if (feedbackRecord(); as fb) {
+                      <div class="next-phase-banner">
+                        <mat-icon>check_circle</mat-icon>
+                        <span>
+                          Decisão <strong>{{ fb.decision }}</strong> registrada (status: {{ fb.updatedStatus }}) ·
+                          Langfuse Score: <strong>{{ fb.langfuseSynced ? 'Sincronizado' : 'Offline' }}</strong>
+                        </span>
+                      </div>
+                    }
+                  </div>
+                }
               </mat-card-content>
             }
           </mat-card>

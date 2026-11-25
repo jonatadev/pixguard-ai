@@ -14,6 +14,10 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import {
+  AnalysisEvent,
+  AnalysisResult,
+  AnalystDecision,
+  AnalystFeedbackRecord,
   CaseDetailResponse,
   GuardrailPreviewResponse,
   HealthResponse,
@@ -69,6 +73,14 @@ export class AppComponent implements OnInit {
   readonly cases = signal<PixCase[]>([]);
   readonly selectedDetail = signal<CaseDetailResponse | null>(null);
   readonly loadingDetail = signal(false);
+
+  readonly analyzingCase = signal(false);
+  readonly analysisEvents = signal<AnalysisEvent[]>([]);
+  readonly analysisResult = signal<AnalysisResult | null>(null);
+  readonly analysisError = signal<string | null>(null);
+  readonly analystNotes = signal('');
+  readonly submittingFeedback = signal(false);
+  readonly feedbackRecord = signal<AnalystFeedbackRecord | null>(null);
 
   readonly guardrailInput = signal(
     'Cliente CPF 123.456.789-01 ligou para (11) 98765-4321 relatando golpe da falsa central para chave 550e8400-e29b-41d4-a716-446655440000.'
@@ -143,6 +155,12 @@ export class AppComponent implements OnInit {
 
   inspectCase(id: string): void {
     this.loadingDetail.set(true);
+    this.analysisEvents.set([]);
+    this.analysisResult.set(null);
+    this.analysisError.set(null);
+    this.feedbackRecord.set(null);
+    this.analystNotes.set('');
+
     this.api.getCaseDetail(id).subscribe({
       next: (detail) => {
         this.selectedDetail.set(detail);
@@ -152,6 +170,58 @@ export class AppComponent implements OnInit {
         this.loadingDetail.set(false);
       },
     });
+  }
+
+  async runMultiAgentAnalysis(): Promise<void> {
+    const detail = this.selectedDetail();
+    if (!detail || this.analyzingCase()) {
+      return;
+    }
+
+    this.analyzingCase.set(true);
+    this.analysisEvents.set([]);
+    this.analysisResult.set(null);
+    this.analysisError.set(null);
+    this.feedbackRecord.set(null);
+
+    try {
+      const result = await this.api.analyzeCaseStream(detail.case.id, (ev) => {
+        this.analysisEvents.update((prev) => [...prev, ev]);
+      });
+      this.analysisResult.set(result);
+      this.loadCases();
+    } catch (err) {
+      this.analysisError.set(err instanceof Error ? err.message : 'Erro na analise multi-agente.');
+    } finally {
+      this.analyzingCase.set(false);
+    }
+  }
+
+  submitAnalystFeedback(decision: AnalystDecision): void {
+    const result = this.analysisResult();
+    if (!result || this.submittingFeedback()) {
+      return;
+    }
+
+    this.submittingFeedback.set(true);
+    this.api
+      .submitFeedback(result.caseId, {
+        traceId: result.traceId,
+        decision,
+        notes: this.analystNotes(),
+      })
+      .subscribe({
+        next: (record) => {
+          this.feedbackRecord.set(record);
+          this.submittingFeedback.set(false);
+          this.loadCases();
+          this.api.getCaseDetail(result.caseId).subscribe((d) => this.selectedDetail.set(d));
+        },
+        error: () => {
+          this.submittingFeedback.set(false);
+          this.analysisError.set('Nao foi possivel registrar o parecer do analista.');
+        },
+      });
   }
 
   applyPreset(preset: 'lgpd' | 'injection' | 'clean'): void {
